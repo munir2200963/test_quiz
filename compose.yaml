@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+
+  #question 2 setup nginx and test docker is working
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    networks:
+      - testcicd_network
+
+  #question 3 setup local github
+  git-server:
+    image: gitea/gitea:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./repos:/data
+    networks:
+      - testcicd_network
+
+  #question 3 is access the local github url and set full name to ur name and email to school email
+  # in this case visit localhost 3000:3000
+
+
+  #question 4 create the python website 
+  
+  #cd to repository then use the command below to push
+  #git add .
+  #git commit -m "Update repository with Jenkinsfile and other changes"
+  #git push origin main
+
+
+  #question 5 create jenkins and integrate with cicd process
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+      args:
+        GIT_USER_NAME: "MUNIR BIN RUDY HERMAN"
+        GIT_USER_EMAIL: "2200963@sit.singaporetech.edu.sg"
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    networks:
+      - testcicd_network
+
+  #question 6 create sonar with db
+  sonarqube:
+    image: sonarqube:lts
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+      - SONARQUBE_JDBC_USERNAME=sonarqube
+      - SONARQUBE_JDBC_PASSWORD=sonarqube
+    networks:
+      - testcicd_network
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: sonarqube
+      POSTGRES_PASSWORD: sonarqube
+      POSTGRES_DB: sonarqube
+    networks:
+      - testcicd_network
+
+networks:
+  testcicd_network:
+    driver: bridge
+
+volumes:
+  jenkins_home:
